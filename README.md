@@ -1,10 +1,10 @@
 # BNB Flasher
 
-Local Angular and Node.js tool for configuring and flashing the BNB master and ESP32-C5 scanner firmware over USB serial.
+Static Angular flasher for the BNB master and ESP32-C5 scanners. The browser communicates directly with USB serial devices through Web Serial and Espressif's `esptool-js`; no local API server or ESP-IDF install is required.
 
 ## Run locally
 
-Requirements: Node.js 22+, npm, the BNBDriverMaster firmware checkout, and ESP-IDF 6.1 with the `esp32` and `esp32c5` targets installed.
+Requirements: Node.js 22+, npm, and a Web Serial-capable desktop browser such as current Chrome or Edge.
 
 ```sh
 export PATH="$HOME/.local/share/nodejs/node-v22.23.3-linux-x64/bin:$PATH"
@@ -12,18 +12,22 @@ npm install
 npm run dev
 ```
 
-Open <http://127.0.0.1:5173>. The API only binds to `127.0.0.1`; firmware builds use ESP-IDF's `idf.py` and flash the selected serial port after a successful build.
+Open <http://127.0.0.1:5173>. On first use, select **Choose USB device** and grant the page permission to access the connected board. Browsers require HTTPS for hosted sites; localhost is treated as secure for development.
 
-By default, the firmware checkout is expected at `../BNBDriverMaster` and ESP-IDF at `~/.espressif/v6.1/esp-idf`. Override either location in the server environment with `FIRMWARE_ROOT` or `IDF_PATH`.
+## Static deployment
 
-The flasher copies each target's existing `sdkconfig` into a temporary job directory, changes only the controls shown in the UI, and builds there. The firmware checkout's `sdkconfig` and normal build directories are not modified.
+Run `npm run build`, then deploy `client/dist/bnb-flasher-ui/browser` to any static host. For example, Cloudflare Pages can use `client` as the project root, `npm run build` as the build command, and `dist/bnb-flasher-ui/browser` as the output directory. The firmware images are included from `client/public/firmwares`.
 
-On Linux, the user running the app must have permission to access the board's USB serial device (commonly through the `dialout` group). Connect the board and refresh the port list before flashing.
+### GitHub Pages
 
-## Firmware profiles
+This repository includes a GitHub Actions deployment workflow. In the repository, open **Settings → Pages** and set the source to **GitHub Actions**. Push to `master` (or run the workflow manually); the site will deploy to <https://byachna.github.io/BNBFlasherApp/>. The build sets Angular's base href to the project-site path so firmware downloads resolve correctly.
 
-- **Master:** BLE device name, UART port/pins/baud, and ESP-NOW channel.
-- **Wired scanner:** UART port/pins/baud.
-- **Wireless scanner:** ESP-NOW channel.
+Web Serial only lists ports the user has granted to this site. The user must initiate port selection from a click; the browser does not allow silent access to arbitrary USB devices. Safari is not supported by Web Serial. The **Source Built Firmware** tab is intentionally disabled; this app flashes the precompiled bundles only.
 
-The scanner transport and target chip are selected by the profile. A flash job configures, builds, then flashes the chosen device; it never erases the entire flash chip.
+## Precompiled profiles
+
+- **Master:** BLE name `BNB-WarDriver`, UART1 on GPIO17/16 at 921600 baud, ESP-NOW channel 1.
+- **Wired scanner:** UART1 on GPIO8/9 at 921600 baud.
+- **Wireless scanner:** ESP-NOW channel 1.
+
+The profile selects the target chip and its bootloader, partition table, and application image. `esptool-js` detects the attached chip before writing, reports progress in the job console, and resets the device after flashing. It does not erase the entire flash chip.

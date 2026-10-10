@@ -1,5 +1,7 @@
+/// <reference types="w3c-web-serial" />
+
 import { NgIcon, provideIcons } from '@ng-icons/core'
-import { FormsModule } from '@angular/forms'
+import { ESPLoader, Transport, type FlashOptions, type IEspLoaderTerminal } from 'esptool-js'
 import {
   lucideActivity,
   lucideCable,
@@ -13,66 +15,67 @@ import {
   lucideUsb,
   lucideZap,
 } from '@ng-icons/lucide'
-import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core'
+import { Component, computed, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
 
-type Profile = 'master' | 'scanner-uart' | 'scanner-espnow'
-type JobState = 'preparing' | 'configuring' | 'building' | 'flashing' | 'success' | 'failed'
-type UartField = 'uartPort' | 'txGpio' | 'rxGpio' | 'baudRate'
-type MasterNumberField = UartField | 'espnowChannel'
+type PrecompiledProfile = 'master' | 'wired' | 'wireless'
+type FirmwareMode = 'precompiled' | 'source'
+type JobState = 'preparing' | 'connecting' | 'flashing' | 'success' | 'failed'
 
 interface SerialDevice {
-  path: string
-  manufacturer?: string
-  friendlyName?: string
-  vendorId?: string
-  productId?: string
-}
-
-interface SystemStatus {
-  idfReady: boolean
-  firmwareReady: boolean
-  idfPath: string
-  firmwareRoot: string
-  busy: boolean
+  port: SerialPort
+  label: string
 }
 
 interface JobSnapshot {
   id: string
-  profile: Profile
+  profile: PrecompiledProfile
   serialPort: string
   state: JobState
   logs: string[]
   error?: string
 }
 
-interface MasterSettings {
-  bleDeviceName: string
-  uartPort: number
-  txGpio: number
-  rxGpio: number
-  baudRate: number
-  espnowChannel: number
-}
-
-interface UartSettings {
-  uartPort: number
-  txGpio: number
-  rxGpio: number
-  baudRate: number
-}
-
-const profileOptions: { id: Profile; name: string; target: string }[] = [
-  { id: 'master', name: 'Master', target: 'ESP32 · BLE + radio' },
-  { id: 'scanner-uart', name: 'Wired scanner', target: 'ESP32-C5 · UART' },
-  { id: 'scanner-espnow', name: 'Wireless scanner', target: 'ESP32-C5 · ESP-NOW' },
+const precompiledProfileOptions: { id: PrecompiledProfile; name: string; target: string; configuration: string }[] = [
+  { id: 'master', name: 'Master', target: 'ESP32 · BLE + radio', configuration: 'BLE BNB-WarDriver · UART1 GPIO17/16 · ESP-NOW channel 1' },
+  { id: 'wired', name: 'Wired scanner', target: 'ESP32-C5 · UART', configuration: 'UART1 GPIO8/9 · 921600 baud' },
+  { id: 'wireless', name: 'Wireless scanner', target: 'ESP32-C5 · ESP-NOW', configuration: 'ESP-NOW channel 1' },
 ]
 
-const baudRates = [115200, 230400, 460800, 921600]
-const activeStates: JobState[] = ['preparing', 'configuring', 'building', 'flashing']
+const precompiledImages: Record<PrecompiledProfile, { chip: string; frequency: FlashOptions['flashFreq']; files: { name: string; address: number }[] }> = {
+  master: {
+    chip: 'ESP32',
+    frequency: '40m',
+    files: [
+      { name: 'bootloader.bin', address: 0x1000 },
+      { name: 'partition-table.bin', address: 0x8000 },
+      { name: 'app.bin', address: 0x10000 },
+    ],
+  },
+  wired: {
+    chip: 'ESP32-C5',
+    frequency: '80m',
+    files: [
+      { name: 'bootloader.bin', address: 0x2000 },
+      { name: 'partition-table.bin', address: 0x8000 },
+      { name: 'app.bin', address: 0x10000 },
+    ],
+  },
+  wireless: {
+    chip: 'ESP32-C5',
+    frequency: '80m',
+    files: [
+      { name: 'bootloader.bin', address: 0x2000 },
+      { name: 'partition-table.bin', address: 0x8000 },
+      { name: 'app.bin', address: 0x10000 },
+    ],
+  },
+}
+
+const activeStates: JobState[] = ['preparing', 'connecting', 'flashing']
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, NgIcon],
+  imports: [NgIcon],
   providers: [provideIcons({
     lucideActivity,
     lucideCable,
@@ -89,162 +92,225 @@ const activeStates: JobState[] = ['preparing', 'configuring', 'building', 'flash
   templateUrl: './bench.html',
 })
 export class App implements OnInit {
-  readonly profiles = profileOptions
-  readonly baudRates = baudRates
-  readonly profile = signal<Profile>('master')
-  readonly masterSettings = signal<MasterSettings>({
-    bleDeviceName: 'BNB-WarDriver',
-    uartPort: 1,
-    txGpio: 17,
-    rxGpio: 16,
-    baudRate: 921600,
-    espnowChannel: 1,
-  })
-  readonly scannerSettings = signal<UartSettings>({ uartPort: 1, txGpio: 8, rxGpio: 9, baudRate: 921600 })
-  readonly scannerChannel = signal(1)
-  readonly ports = signal<SerialDevice[]>([])
-  readonly serialPort = signal('')
+  readonly firmwareMode = signal<FirmwareMode>('precompiled')
+  readonly precompiledProfiles = precompiledProfileOptions
+  readonly precompiledProfile = signal<PrecompiledProfile>('master')
   readonly loadingPorts = signal(false)
   readonly portError = signal('')
-  readonly systemStatus = signal<SystemStatus | null>(null)
   readonly job = signal<JobSnapshot | null>(null)
   readonly logs = signal<string[]>([])
   readonly requestError = signal('')
-  readonly ready = computed(() => Boolean(this.systemStatus()?.idfReady && this.systemStatus()?.firmwareReady))
-  readonly busy = computed(() => Boolean(this.systemStatus()?.busy)
-    || Boolean(this.job() && activeStates.includes(this.job()!.state)))
-  readonly selectedProfile = computed(() => this.profiles.find((item) => item.id === this.profile()) ?? this.profiles[0])
+  readonly serialSupported = signal(typeof navigator !== 'undefined' && 'serial' in navigator && isSecureContext)
+  readonly ready = computed(() => this.serialSupported())
+  readonly busy = computed(() => Boolean(this.job() && activeStates.includes(this.job()!.state)))
+  readonly selectedPrecompiledProfile = computed(() => this.precompiledProfiles.find((item) => item.id === this.precompiledProfile()) ?? this.precompiledProfiles[0])
+  readonly serialPorts = signal<SerialDevice[]>([])
+  readonly selectedPortIndex = signal(-1)
 
   @ViewChild('output') private output?: ElementRef<HTMLPreElement>
 
-  private readonly destroyRef = inject(DestroyRef)
-  private events?: EventSource
-
-  constructor() {
-    this.destroyRef.onDestroy(() => this.events?.close())
-  }
+  private terminalPending = ''
 
   ngOnInit() {
-    void this.loadInitialState()
+    if (this.serialSupported()) void this.refreshPorts()
   }
 
   async refreshPorts() {
+    if (!this.serialSupported()) return
     this.loadingPorts.set(true)
     this.portError.set('')
     try {
-      const response = await fetch('/api/ports')
-      if (!response.ok) throw new Error('Unable to read serial devices.')
-      const availablePorts = await response.json() as SerialDevice[]
-      this.ports.set(availablePorts)
-      const current = this.serialPort()
-      this.serialPort.set(availablePorts.some((item) => item.path === current)
-        ? current
-        : availablePorts[0]?.path ?? '')
+      const availablePorts = await navigator.serial.getPorts()
+      const nextPorts = availablePorts.map((port) => ({ port, label: this.describePort(port) }))
+      this.serialPorts.set(nextPorts)
+      const selectedIndex = nextPorts.findIndex((item) => item.port === this.selectedPort())
+      const nextIndex = selectedIndex >= 0 ? selectedIndex : nextPorts.length === 1 ? 0 : -1
+      this.selectedPortIndex.set(nextIndex)
     } catch (error) {
-      this.portError.set(error instanceof Error ? error.message : 'Unable to read serial devices.')
+      this.portError.set(error instanceof Error ? error.message : 'Unable to enumerate permitted serial devices.')
     } finally {
       this.loadingPorts.set(false)
     }
   }
 
-  setProfile(profile: Profile) {
-    this.profile.set(profile)
-  }
-
-  setBleName(event: Event) {
-    const value = (event.target as HTMLInputElement).value
-    this.masterSettings.update((settings) => ({ ...settings, bleDeviceName: value }))
-  }
-
-  setMasterNumber(field: MasterNumberField, event: Event) {
-    const value = Number((event.target as HTMLInputElement).value)
-    this.masterSettings.update((settings) => ({ ...settings, [field]: value }))
-  }
-
-  setMasterSelect(field: 'uartPort' | 'baudRate', value: number) {
-    this.masterSettings.update((settings) => ({ ...settings, [field]: value }))
-  }
-
-  setScannerNumber(field: UartField, event: Event) {
-    const value = Number((event.target as HTMLInputElement).value)
-    this.scannerSettings.update((settings) => ({ ...settings, [field]: value }))
-  }
-
-  setScannerSelect(field: 'uartPort' | 'baudRate', value: number) {
-    this.scannerSettings.update((settings) => ({ ...settings, [field]: value }))
-  }
-
-  setScannerChannel(event: Event) {
-    this.scannerChannel.set(Number((event.target as HTMLInputElement).value))
+  async requestUsbPort() {
+    if (!this.serialSupported() || this.busy()) return
+    this.portError.set('')
+    try {
+      const port = await navigator.serial.requestPort()
+      const ports = await navigator.serial.getPorts()
+      const nextPorts = ports.map((permittedPort) => ({ port: permittedPort, label: this.describePort(permittedPort) }))
+      const selectedIndex = nextPorts.findIndex((item) => item.port === port)
+      this.serialPorts.set(nextPorts)
+      this.selectedPortIndex.set(selectedIndex)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'NotFoundError') return
+      this.portError.set(error instanceof Error ? error.message : 'Could not access the selected USB serial port.')
+    }
   }
 
   setSerialPort(event: Event) {
-    this.serialPort.set((event.target as HTMLSelectElement).value)
+    this.selectedPortIndex.set(Number((event.target as HTMLSelectElement).value))
   }
 
-  async flashFirmware(event: Event) {
-    event.preventDefault()
-    if (!this.serialPort() || !this.ready() || this.busy()) return
+  selectedPort() {
+    const index = this.selectedPortIndex()
+    return index >= 0 ? this.serialPorts()[index]?.port ?? null : null
+  }
 
-    const selected = this.selectedProfile()
-    if (!window.confirm(`Build and flash ${selected.name} to ${this.serialPort()}?`)) return
+  selectedPortLabel() {
+    const index = this.selectedPortIndex()
+    return index >= 0 ? this.serialPorts()[index]?.label ?? '' : ''
+  }
 
-    const profile = this.profile()
-    const settings = profile === 'master'
-      ? this.masterSettings()
-      : profile === 'scanner-uart'
-        ? this.scannerSettings()
-        : { espnowChannel: this.scannerChannel() }
+  describePort(port: SerialPort) {
+    const info = port.getInfo()
+    const vendor = info.usbVendorId?.toString(16).padStart(4, '0')
+    const product = info.usbProductId?.toString(16).padStart(4, '0')
+    if (vendor && product) return `USB ${vendor}:${product}`
+    return 'Serial device'
+  }
+
+  setFirmwareMode(mode: FirmwareMode) {
+    this.firmwareMode.set(mode)
+  }
+
+  setPrecompiledProfile(profile: PrecompiledProfile) {
+    this.precompiledProfile.set(profile)
+  }
+
+  async flashPrecompiledFirmware() {
+    const port = this.selectedPort()
+    if (!port || !this.ready() || this.busy()) return
+
+    const selected = this.selectedPrecompiledProfile()
+    if (!window.confirm(`Flash precompiled ${selected.name} firmware to ${this.selectedPortLabel()}?`)) return
 
     this.requestError.set('')
     this.logs.set([])
-    this.job.set(null)
-    this.events?.close()
+    this.terminalPending = ''
+    const profile = this.precompiledProfile()
+    const bundle = precompiledImages[profile]
+    const jobId = crypto.randomUUID()
+    const initialJob: JobSnapshot = {
+      id: jobId,
+      profile,
+      serialPort: this.selectedPortLabel(),
+      state: 'preparing',
+      logs: [],
+    }
+    this.job.set(initialJob)
+    this.appendLog(`Selected ${selected.name} · ${bundle.chip}.`)
+    this.appendLog(`Requesting ${bundle.files.length} precompiled image(s).`)
 
+    let transport: Transport | undefined
     try {
-      const response = await fetch('/api/flash', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, serialPort: this.serialPort(), settings }),
-      })
-      const result = await response.json() as JobSnapshot & { error?: string }
-      if (!response.ok) throw new Error(result.error ?? 'Could not start the flash job.')
+      const fileArray = await Promise.all(bundle.files.map(async (file) => {
+        const url = new URL(`firmwares/${profile}/${file.name}`, document.baseURI)
+        this.appendLog(`Loading ${file.name}...`)
+        const response = await fetch(url)
+        if (!response.ok) throw new Error(`Could not load ${file.name} (HTTP ${response.status}).`)
+        return { address: file.address, data: new Uint8Array(await response.arrayBuffer()) }
+      }))
 
-      this.job.set(result)
-      this.logs.set(result.logs)
-      this.scrollOutput()
-      this.events = new EventSource(`/api/jobs/${result.id}/events`)
-      this.events.onmessage = (message) => {
-        const update = JSON.parse(message.data) as JobSnapshot
-        this.job.set(update)
-        this.logs.set(update.logs)
-        this.scrollOutput()
-        if (update.state === 'success' || update.state === 'failed') this.events?.close()
+      this.setJobState('connecting')
+      this.appendLog('Connecting to the selected USB serial device...')
+      const terminal: IEspLoaderTerminal = {
+        clean: () => undefined,
+        writeLine: (text) => this.appendTerminalText(`${text}\n`),
+        write: (text) => this.appendTerminalText(text),
       }
+      transport = new Transport(port)
+      const loader = new ESPLoader({ transport, baudrate: 115200, terminal, debugLogging: false })
+      const detectedChipDescription = await loader.main()
+      const detectedChip = loader.chip.CHIP_NAME
+      if (detectedChip !== bundle.chip) {
+        throw new Error(`Selected ${selected.name} expects ${bundle.chip}, but detected ${detectedChipDescription}.`)
+      }
+      this.appendLog(`Detected ${detectedChipDescription}.`)
+
+      this.setJobState('flashing')
+      this.appendLog('Writing bootloader, partition table, and application...')
+      const flashOptions: FlashOptions = {
+        fileArray,
+        flashMode: 'dio',
+        flashFreq: bundle.frequency,
+        flashSize: '4MB',
+        eraseAll: false,
+        compress: true,
+        reportProgress: (fileIndex, written, total) => {
+          const file = bundle.files[fileIndex]
+          const percent = total === 0 ? 100 : Math.floor((written / total) * 100)
+          this.setJobState('flashing')
+          this.replaceProgressLog(`${file?.name ?? 'Firmware'}: ${percent}%`)
+        },
+      }
+      await loader.writeFlash(flashOptions)
+      this.flushTerminalText()
+      await loader.after('hard_reset')
+      this.appendLog('Flash verified and device reset.')
+      this.setJobState('success')
     } catch (error) {
-      this.requestError.set(error instanceof Error ? error.message : 'Could not start the flash job.')
+      this.flushTerminalText()
+      const message = error instanceof Error ? error.message : 'Browser flashing failed.'
+      this.requestError.set(message)
+      this.appendLog(message)
+      this.setJobState('failed', message)
+    } finally {
+      if (transport) {
+        await transport.disconnect().catch((error: unknown) => {
+          this.appendLog(error instanceof Error ? `Port close: ${error.message}` : 'Port close failed.')
+        })
+      }
     }
   }
 
-  basename(path: string) {
-    return path.split('/').filter(Boolean).at(-1) ?? path
+  private appendLog(line: string) {
+    this.logs.update((lines) => [...lines, line].slice(-1200))
+    this.syncJobLogs()
+    this.scrollOutput()
   }
 
-  private async loadInitialState() {
-    try {
-      const [statusResponse, portsResponse] = await Promise.all([
-        fetch('/api/status'),
-        fetch('/api/ports'),
-      ])
-      if (!statusResponse.ok || !portsResponse.ok) throw new Error('The local flasher service is unavailable.')
-      const status = await statusResponse.json() as SystemStatus
-      const availablePorts = await portsResponse.json() as SerialDevice[]
-      this.systemStatus.set(status)
-      this.ports.set(availablePorts)
-      this.serialPort.set(availablePorts[0]?.path ?? '')
-    } catch (error) {
-      this.requestError.set(error instanceof Error ? error.message : 'Could not reach the flasher service.')
+  private appendTerminalText(text: string) {
+    this.terminalPending += text
+    const chunks = this.terminalPending.split(/\r\n|\n|\r/)
+    this.terminalPending = chunks.pop() ?? ''
+    for (const chunk of chunks) {
+      const line = chunk.replace(/\u001B\[[0-?]*[ -/]*[@-~]/g, '').trim()
+      if (line) this.appendLog(line)
     }
+  }
+
+  private flushTerminalText() {
+    const line = this.terminalPending.replace(/\u001B\[[0-?]*[ -/]*[@-~]/g, '').trim()
+    this.terminalPending = ''
+    if (line) this.appendLog(line)
+  }
+
+  private replaceProgressLog(line: string) {
+    this.logs.update((lines) => {
+      const next = [...lines]
+      let lastIndex = -1
+      for (let index = next.length - 1; index >= 0; index--) {
+        if (next[index].includes('%')) {
+          lastIndex = index
+          break
+        }
+      }
+      if (lastIndex >= 0) next[lastIndex] = line
+      else next.push(line)
+      return next.slice(-1200)
+    })
+    this.syncJobLogs()
+    this.scrollOutput()
+  }
+
+  private setJobState(state: JobState, error?: string) {
+    this.job.update((job) => job ? { ...job, state, logs: this.logs(), ...(error ? { error } : {}) } : job)
+  }
+
+  private syncJobLogs() {
+    this.job.update((job) => job ? { ...job, logs: this.logs() } : job)
   }
 
   private scrollOutput() {

@@ -2,13 +2,13 @@
   <header class="topbar">
     <a class="wordmark" href="#top" aria-label="BNB Flasher home">
       <span class="wordmark-mark"><ng-icon name="lucideCpu" size="18" /></span>
-      <span>BNB<span class="wordmark-light"> / FLASH</span></span>
+      <span>Built-Not-Bought<span class="wordmark-light"> / FLASH</span></span>
     </a>
     <div class="topbar-status">
       <span class="status-dot" [class.is-ready]="ready()" [class.is-waiting]="!ready()"></span>
-      <span>{{ ready() ? 'TOOLCHAIN READY' : 'CHECK TOOLCHAIN' }}</span>
+      <span>{{ ready() ? 'WEB SERIAL READY' : 'USE A WEB SERIAL BROWSER' }}</span>
       <span class="topbar-divider"></span>
-      <span class="local-mark"><ng-icon name="lucideActivity" size="14" /> LOCAL</span>
+      <span class="local-mark"><ng-icon name="lucideActivity" size="14" /> BROWSER</span>
     </div>
   </header>
 
@@ -16,37 +16,66 @@
     <section class="page-heading">
       <div>
         <p class="eyebrow"><span>01</span> DEVICE PROGRAMMER</p>
-        <h1>Bench <span>flash</span></h1>
+        <h1>BNB <span> flasher</span></h1>
       </div>
       <div class="heading-meta">
-        <span class="heading-mark">ESP-IDF</span>
-        <span class="heading-mark">USB SERIAL</span>
+        <span class="heading-mark">ESPTOOL-JS</span>
+        <span class="heading-mark">WEB SERIAL</span>
       </div>
     </section>
 
     <div class="workbench">
-      <form class="config-panel panel" (submit)="flashFirmware($event)">
+      <section class="config-panel panel">
         <div class="panel-heading">
           <div class="panel-index">A</div>
           <div>
-            <p class="section-kicker">FIRMWARE PROFILE</p>
-            <h2>Target &amp; parameters</h2>
+            <p class="section-kicker">FIRMWARE WORKFLOW</p>
+            <h2>Select a firmware image</h2>
           </div>
         </div>
 
+        <div class="firmware-tabs" role="tablist" aria-label="Firmware workflow">
+          <button
+            id="precompiled-tab"
+            class="firmware-tab"
+            type="button"
+            role="tab"
+            aria-controls="precompiled-panel"
+            [attr.aria-selected]="firmwareMode() === 'precompiled'"
+            [class.is-active]="firmwareMode() === 'precompiled'"
+            [disabled]="busy()"
+            (click)="setFirmwareMode('precompiled')">
+            Precompiled Firmware
+          </button>
+          <button
+            id="source-tab"
+            class="firmware-tab"
+            type="button"
+            role="tab"
+            aria-controls="source-panel"
+            [attr.aria-selected]="firmwareMode() === 'source'"
+            [class.is-active]="firmwareMode() === 'source'"
+            [disabled]="true"
+            aria-disabled="true"
+            title="Source builds are currently disabled">
+            Source Built Firmware
+          </button>
+        </div>
+
+        <div id="precompiled-panel" class="firmware-panel" role="tabpanel" aria-labelledby="precompiled-tab" [hidden]="firmwareMode() !== 'precompiled'">
         <div class="profile-grid" role="radiogroup" aria-label="Firmware profile">
-          @for (item of profiles; track item.id) {
+          @for (item of precompiledProfiles; track item.id) {
             <button
               class="profile-option"
-              [class.is-selected]="profile() === item.id"
+              [class.is-selected]="precompiledProfile() === item.id"
               type="button"
               role="radio"
-              [attr.aria-checked]="profile() === item.id"
+              [attr.aria-checked]="precompiledProfile() === item.id"
               [disabled]="busy()"
-              (click)="setProfile(item.id)">
+              (click)="setPrecompiledProfile(item.id)">
               <span class="profile-icon">
                 @if (item.id === 'master') { <ng-icon name="lucideCpu" size="18" /> }
-                @else if (item.id === 'scanner-uart') { <ng-icon name="lucideCable" size="18" /> }
+                @else if (item.id === 'wired') { <ng-icon name="lucideCable" size="18" /> }
                 @else { <ng-icon name="lucideRadio" size="18" /> }
               </span>
               <span class="profile-name">{{ item.name }}</span>
@@ -56,89 +85,14 @@
           }
         </div>
 
-        <div class="form-divider"></div>
         <div class="settings-heading">
           <div>
-            <p class="section-kicker">CONFIGURATION</p>
-            <h3>{{ selectedProfile().name }}</h3>
+            <p class="section-kicker">BUNDLED CONFIGURATION</p>
+            <h3>{{ selectedPrecompiledProfile().name }}</h3>
           </div>
-          <span class="target-badge">{{ profile() === 'master' ? 'ESP32' : 'ESP32-C5' }}</span>
+          <span class="target-badge">{{ selectedPrecompiledProfile().target.split(' · ')[0] }}</span>
         </div>
-
-        @if (profile() === 'master') {
-          <div class="field-grid">
-            <label class="field field-wide">
-              <span>BLE device name</span>
-              <input [value]="masterSettings().bleDeviceName" maxlength="31" pattern="[A-Za-z0-9 _-]+" (input)="setBleName($event)" required />
-              <small>Up to 31 characters</small>
-            </label>
-            <label class="field">
-              <span>UART port</span>
-              <select [ngModel]="masterSettings().uartPort" (ngModelChange)="setMasterSelect('uartPort', $event)" [ngModelOptions]="{ standalone: true }">
-                @for (value of [0, 1, 2]; track value) { <option [ngValue]="value">UART{{ value }}</option> }
-              </select>
-            </label>
-            <label class="field">
-              <span>Baud rate</span>
-              <select [ngModel]="masterSettings().baudRate" (ngModelChange)="setMasterSelect('baudRate', $event)" [ngModelOptions]="{ standalone: true }">
-                @for (value of baudRates; track value) { <option [ngValue]="value">{{ value.toLocaleString() }}</option> }
-              </select>
-            </label>
-            <label class="field">
-              <span>UART TX GPIO</span>
-              <input type="number" min="0" max="39" [value]="masterSettings().txGpio" (input)="setMasterNumber('txGpio', $event)" required />
-            </label>
-            <label class="field">
-              <span>UART RX GPIO</span>
-              <input type="number" min="0" max="39" [value]="masterSettings().rxGpio" (input)="setMasterNumber('rxGpio', $event)" required />
-            </label>
-            <label class="field field-wide">
-              <span>ESP-NOW channel</span>
-              <div class="channel-control">
-                <input type="range" min="1" max="13" [value]="masterSettings().espnowChannel" (input)="setMasterNumber('espnowChannel', $event)" aria-label="ESP-NOW channel" />
-                <output>{{ masterSettings().espnowChannel }}</output>
-              </div>
-            </label>
-          </div>
-        }
-
-        @if (profile() === 'scanner-uart') {
-          <div class="field-grid">
-            <label class="field">
-              <span>UART port</span>
-              <select [ngModel]="scannerSettings().uartPort" (ngModelChange)="setScannerSelect('uartPort', $event)" [ngModelOptions]="{ standalone: true }">
-                @for (value of [0, 1, 2]; track value) { <option [ngValue]="value">UART{{ value }}</option> }
-              </select>
-            </label>
-            <label class="field">
-              <span>Baud rate</span>
-              <select [ngModel]="scannerSettings().baudRate" (ngModelChange)="setScannerSelect('baudRate', $event)" [ngModelOptions]="{ standalone: true }">
-                @for (value of baudRates; track value) { <option [ngValue]="value">{{ value.toLocaleString() }}</option> }
-              </select>
-            </label>
-            <label class="field">
-              <span>UART TX GPIO</span>
-              <input type="number" min="0" max="28" [value]="scannerSettings().txGpio" (input)="setScannerNumber('txGpio', $event)" required />
-            </label>
-            <label class="field">
-              <span>UART RX GPIO</span>
-              <input type="number" min="0" max="28" [value]="scannerSettings().rxGpio" (input)="setScannerNumber('rxGpio', $event)" required />
-            </label>
-          </div>
-        }
-
-        @if (profile() === 'scanner-espnow') {
-          <div class="field-grid">
-            <label class="field field-wide">
-              <span>ESP-NOW channel</span>
-              <div class="channel-control">
-                <input type="range" min="1" max="13" [value]="scannerChannel()" (input)="setScannerChannel($event)" aria-label="ESP-NOW channel" />
-                <output>{{ scannerChannel() }}</output>
-              </div>
-              <small>Must match the master channel</small>
-            </label>
-          </div>
-        }
+        <p class="bundle-description">{{ selectedPrecompiledProfile().configuration }}</p>
 
         @if (requestError()) {
           <div class="inline-alert" role="alert"><ng-icon name="lucideCircleAlert" size="16" />{{ requestError() }}</div>
@@ -147,52 +101,60 @@
         <div class="form-footer">
           <div class="config-summary">
             <span class="summary-led"></span>
-            <span>{{ ready() ? 'Configuration ready' : 'Toolchain unavailable' }}</span>
+            <span>{{ ready() ? 'Browser flasher ready' : 'Web Serial unavailable' }}</span>
           </div>
-          <button class="flash-button" type="submit" [disabled]="!ready() || !serialPort() || busy()">
+          <button class="flash-button" type="button" (click)="flashPrecompiledFirmware()" [disabled]="!ready() || !selectedPort() || busy()">
             @if (busy()) { <ng-icon class="spin" name="lucideLoaderCircle" size="17" /> }
             @else { <ng-icon name="lucideZap" size="17" /> }
-            <span>{{ busy() ? 'Working…' : 'Build & flash' }}</span>
+            <span>{{ busy() ? 'Working…' : 'Flash firmware' }}</span>
           </button>
         </div>
-      </form>
+
+        </div>
+
+        <div id="source-panel" class="firmware-panel" role="tabpanel" aria-labelledby="source-tab" hidden>
+          <p class="bundle-description">Source builds are currently disabled. Use the bundled firmware images.</p>
+        </div>
+      </section>
 
       <div class="device-column">
         <section class="device-panel panel">
           <div class="panel-heading compact-heading">
             <div class="panel-index">B</div>
             <div>
-              <p class="section-kicker">USB DEVICE</p>
-              <h2>Serial connection</h2>
+              <p class="section-kicker">WEB SERIAL</p>
+              <h2>Browser USB access</h2>
             </div>
-            <button class="icon-button" type="button" (click)="refreshPorts()" [disabled]="loadingPorts() || busy()" title="Refresh serial devices" aria-label="Refresh serial devices">
+              <button class="icon-button" type="button" (click)="refreshPorts()" [disabled]="loadingPorts() || busy() || !ready()" title="Refresh permitted devices" aria-label="Refresh permitted devices">
               <ng-icon [class.spin]="loadingPorts()" name="lucideRefreshCw" size="16" />
             </button>
           </div>
           <label class="field device-select">
-            <span>Connected port</span>
+              <span>Permitted device</span>
             <div class="select-with-icon">
               <ng-icon name="lucideUsb" size="17" />
-              <select [value]="serialPort()" (change)="setSerialPort($event)" [disabled]="ports().length === 0 || busy()">
-                @if (ports().length === 0) { <option value="">No serial devices found</option> }
-                @for (device of ports(); track device.path) {
-                  <option [value]="device.path">{{ device.path }}{{ device.manufacturer ? ' · ' + device.manufacturer : '' }}{{ device.vendorId ? ' · ' + device.vendorId + ':' + (device.productId ?? '') : '' }}</option>
+                <select [value]="selectedPortIndex()" (change)="setSerialPort($event)" [disabled]="serialPorts().length === 0 || busy()">
+                  @if (serialPorts().length === 0) { <option value="-1">No permitted device selected</option> }
+                  @for (device of serialPorts(); track device.port; let index = $index) {
+                    <option [value]="index">{{ device.label }}</option>
                 }
               </select>
             </div>
           </label>
+            <button class="flash-button choose-device-button" type="button" (click)="requestUsbPort()" [disabled]="!ready() || busy()">
+              <ng-icon name="lucideUsb" size="16" />
+              <span>Choose USB device</span>
+            </button>
           <div class="device-meta">
-            <span><span class="status-dot is-ready"></span> {{ ports().length }} {{ ports().length === 1 ? 'device' : 'devices' }} detected</span>
-            <span class="mono">{{ serialPort() || '—' }}</span>
+              <span><span class="status-dot" [class.is-ready]="selectedPort()" [class.is-waiting]="!selectedPort()"></span> {{ serialPorts().length }} permitted {{ serialPorts().length === 1 ? 'device' : 'devices' }}</span>
+              <span class="mono">{{ selectedPortLabel() || '—' }}</span>
           </div>
           @if (portError()) { <p class="field-error" role="alert">{{ portError() }}</p> }
-          @if (systemStatus(); as status) {
-            @if (!status.idfReady || !status.firmwareReady) {
+            @if (!serialSupported()) {
               <div class="system-warning" role="status">
                 <ng-icon name="lucideCircleAlert" size="16" />
-                <span>{{ !status.idfReady ? 'ESP-IDF not found. Check IDF_PATH.' : 'Firmware source not found. Check FIRMWARE_ROOT.' }}</span>
+                <span>Web Serial requires Chrome or Edge on HTTPS or localhost.</span>
               </div>
-            }
           }
         </section>
 
@@ -214,17 +176,16 @@
             }
           </pre>
           <div class="console-footer">
-            <span>{{ job() ? selectedProfile().name + ' · ' + job()!.serialPort : 'No active job' }}</span>
+              <span>{{ job() ? selectedPrecompiledProfile().name + ' · ' + job()!.serialPort : 'No active job' }}</span>
             <span>{{ logs().length.toString().padStart(3, '0') }} LINES</span>
           </div>
         </section>
       </div>
     </div>
-
     <footer class="page-footer">
       <span>BNB DEVICE TOOLS</span>
-      <span>{{ systemStatus() ? basename(systemStatus()!.firmwareRoot) : 'FIRMWARE SOURCE' }}</span>
-      <span>LOCAL SESSION</span>
+      <span>STATIC FIRMWARE BUNDLES</span>
+      <span>USER-GRANTED PORT ACCESS</span>
     </footer>
   </main>
 </div>
