@@ -1,0 +1,29 @@
+{
+  "name": "bnb-flasher",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch server/index.ts",
+    "dev:web": "npm run start --workspace client -- --host 127.0.0.1 --port 5173 --proxy-config proxy.conf.json",
+    "build": "npm run build --workspace client && tsc -p server/tsconfig.json",
+    "typecheck": "npm run build --workspace client && tsc -p server/tsconfig.json --noEmit",
+    "test": "tsx --test server/*.test.ts",
+    "start": "node dist/server/index.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "serialport": "^13.0.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.19.0",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

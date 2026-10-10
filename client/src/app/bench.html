@@ -1,0 +1,230 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="wordmark" href="#top" aria-label="BNB Flasher home">
+      <span class="wordmark-mark"><ng-icon name="lucideCpu" size="18" /></span>
+      <span>BNB<span class="wordmark-light"> / FLASH</span></span>
+    </a>
+    <div class="topbar-status">
+      <span class="status-dot" [class.is-ready]="ready()" [class.is-waiting]="!ready()"></span>
+      <span>{{ ready() ? 'TOOLCHAIN READY' : 'CHECK TOOLCHAIN' }}</span>
+      <span class="topbar-divider"></span>
+      <span class="local-mark"><ng-icon name="lucideActivity" size="14" /> LOCAL</span>
+    </div>
+  </header>
+
+  <main id="top" class="main-content">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow"><span>01</span> DEVICE PROGRAMMER</p>
+        <h1>Bench <span>flash</span></h1>
+      </div>
+      <div class="heading-meta">
+        <span class="heading-mark">ESP-IDF</span>
+        <span class="heading-mark">USB SERIAL</span>
+      </div>
+    </section>
+
+    <div class="workbench">
+      <form class="config-panel panel" (submit)="flashFirmware($event)">
+        <div class="panel-heading">
+          <div class="panel-index">A</div>
+          <div>
+            <p class="section-kicker">FIRMWARE PROFILE</p>
+            <h2>Target &amp; parameters</h2>
+          </div>
+        </div>
+
+        <div class="profile-grid" role="radiogroup" aria-label="Firmware profile">
+          @for (item of profiles; track item.id) {
+            <button
+              class="profile-option"
+              [class.is-selected]="profile() === item.id"
+              type="button"
+              role="radio"
+              [attr.aria-checked]="profile() === item.id"
+              [disabled]="busy()"
+              (click)="setProfile(item.id)">
+              <span class="profile-icon">
+                @if (item.id === 'master') { <ng-icon name="lucideCpu" size="18" /> }
+                @else if (item.id === 'scanner-uart') { <ng-icon name="lucideCable" size="18" /> }
+                @else { <ng-icon name="lucideRadio" size="18" /> }
+              </span>
+              <span class="profile-name">{{ item.name }}</span>
+              <span class="profile-target">{{ item.target }}</span>
+              <span class="radio-indicator"></span>
+            </button>
+          }
+        </div>
+
+        <div class="form-divider"></div>
+        <div class="settings-heading">
+          <div>
+            <p class="section-kicker">CONFIGURATION</p>
+            <h3>{{ selectedProfile().name }}</h3>
+          </div>
+          <span class="target-badge">{{ profile() === 'master' ? 'ESP32' : 'ESP32-C5' }}</span>
+        </div>
+
+        @if (profile() === 'master') {
+          <div class="field-grid">
+            <label class="field field-wide">
+              <span>BLE device name</span>
+              <input [value]="masterSettings().bleDeviceName" maxlength="31" pattern="[A-Za-z0-9 _-]+" (input)="setBleName($event)" required />
+              <small>Up to 31 characters</small>
+            </label>
+            <label class="field">
+              <span>UART port</span>
+              <select [ngModel]="masterSettings().uartPort" (ngModelChange)="setMasterSelect('uartPort', $event)" [ngModelOptions]="{ standalone: true }">
+                @for (value of [0, 1, 2]; track value) { <option [ngValue]="value">UART{{ value }}</option> }
+              </select>
+            </label>
+            <label class="field">
+              <span>Baud rate</span>
+              <select [ngModel]="masterSettings().baudRate" (ngModelChange)="setMasterSelect('baudRate', $event)" [ngModelOptions]="{ standalone: true }">
+                @for (value of baudRates; track value) { <option [ngValue]="value">{{ value.toLocaleString() }}</option> }
+              </select>
+            </label>
+            <label class="field">
+              <span>UART TX GPIO</span>
+              <input type="number" min="0" max="39" [value]="masterSettings().txGpio" (input)="setMasterNumber('txGpio', $event)" required />
+            </label>
+            <label class="field">
+              <span>UART RX GPIO</span>
+              <input type="number" min="0" max="39" [value]="masterSettings().rxGpio" (input)="setMasterNumber('rxGpio', $event)" required />
+            </label>
+            <label class="field field-wide">
+              <span>ESP-NOW channel</span>
+              <div class="channel-control">
+                <input type="range" min="1" max="13" [value]="masterSettings().espnowChannel" (input)="setMasterNumber('espnowChannel', $event)" aria-label="ESP-NOW channel" />
+                <output>{{ masterSettings().espnowChannel }}</output>
+              </div>
+            </label>
+          </div>
+        }
+
+        @if (profile() === 'scanner-uart') {
+          <div class="field-grid">
+            <label class="field">
+              <span>UART port</span>
+              <select [ngModel]="scannerSettings().uartPort" (ngModelChange)="setScannerSelect('uartPort', $event)" [ngModelOptions]="{ standalone: true }">
+                @for (value of [0, 1, 2]; track value) { <option [ngValue]="value">UART{{ value }}</option> }
+              </select>
+            </label>
+            <label class="field">
+              <span>Baud rate</span>
+              <select [ngModel]="scannerSettings().baudRate" (ngModelChange)="setScannerSelect('baudRate', $event)" [ngModelOptions]="{ standalone: true }">
+                @for (value of baudRates; track value) { <option [ngValue]="value">{{ value.toLocaleString() }}</option> }
+              </select>
+            </label>
+            <label class="field">
+              <span>UART TX GPIO</span>
+              <input type="number" min="0" max="28" [value]="scannerSettings().txGpio" (input)="setScannerNumber('txGpio', $event)" required />
+            </label>
+            <label class="field">
+              <span>UART RX GPIO</span>
+              <input type="number" min="0" max="28" [value]="scannerSettings().rxGpio" (input)="setScannerNumber('rxGpio', $event)" required />
+            </label>
+          </div>
+        }
+
+        @if (profile() === 'scanner-espnow') {
+          <div class="field-grid">
+            <label class="field field-wide">
+              <span>ESP-NOW channel</span>
+              <div class="channel-control">
+                <input type="range" min="1" max="13" [value]="scannerChannel()" (input)="setScannerChannel($event)" aria-label="ESP-NOW channel" />
+                <output>{{ scannerChannel() }}</output>
+              </div>
+              <small>Must match the master channel</small>
+            </label>
+          </div>
+        }
+
+        @if (requestError()) {
+          <div class="inline-alert" role="alert"><ng-icon name="lucideCircleAlert" size="16" />{{ requestError() }}</div>
+        }
+
+        <div class="form-footer">
+          <div class="config-summary">
+            <span class="summary-led"></span>
+            <span>{{ ready() ? 'Configuration ready' : 'Toolchain unavailable' }}</span>
+          </div>
+          <button class="flash-button" type="submit" [disabled]="!ready() || !serialPort() || busy()">
+            @if (busy()) { <ng-icon class="spin" name="lucideLoaderCircle" size="17" /> }
+            @else { <ng-icon name="lucideZap" size="17" /> }
+            <span>{{ busy() ? 'Working…' : 'Build & flash' }}</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="device-column">
+        <section class="device-panel panel">
+          <div class="panel-heading compact-heading">
+            <div class="panel-index">B</div>
+            <div>
+              <p class="section-kicker">USB DEVICE</p>
+              <h2>Serial connection</h2>
+            </div>
+            <button class="icon-button" type="button" (click)="refreshPorts()" [disabled]="loadingPorts() || busy()" title="Refresh serial devices" aria-label="Refresh serial devices">
+              <ng-icon [class.spin]="loadingPorts()" name="lucideRefreshCw" size="16" />
+            </button>
+          </div>
+          <label class="field device-select">
+            <span>Connected port</span>
+            <div class="select-with-icon">
+              <ng-icon name="lucideUsb" size="17" />
+              <select [value]="serialPort()" (change)="setSerialPort($event)" [disabled]="ports().length === 0 || busy()">
+                @if (ports().length === 0) { <option value="">No serial devices found</option> }
+                @for (device of ports(); track device.path) {
+                  <option [value]="device.path">{{ device.path }}{{ device.manufacturer ? ' · ' + device.manufacturer : '' }}{{ device.vendorId ? ' · ' + device.vendorId + ':' + (device.productId ?? '') : '' }}</option>
+                }
+              </select>
+            </div>
+          </label>
+          <div class="device-meta">
+            <span><span class="status-dot is-ready"></span> {{ ports().length }} {{ ports().length === 1 ? 'device' : 'devices' }} detected</span>
+            <span class="mono">{{ serialPort() || '—' }}</span>
+          </div>
+          @if (portError()) { <p class="field-error" role="alert">{{ portError() }}</p> }
+          @if (systemStatus(); as status) {
+            @if (!status.idfReady || !status.firmwareReady) {
+              <div class="system-warning" role="status">
+                <ng-icon name="lucideCircleAlert" size="16" />
+                <span>{{ !status.idfReady ? 'ESP-IDF not found. Check IDF_PATH.' : 'Firmware source not found. Check FIRMWARE_ROOT.' }}</span>
+              </div>
+            }
+          }
+        </section>
+
+        <section class="console-panel panel">
+          <div class="console-heading">
+            <div class="console-title"><ng-icon name="lucideTerminal" size="17" /><span>JOB CONSOLE</span></div>
+            <span class="job-state" [class.success]="job()?.state === 'success'" [class.failed]="job()?.state === 'failed'">
+              @if (job()?.state === 'success') { <ng-icon name="lucideCircleCheck" size="13" /> }
+              @else if (job()?.state === 'failed') { <ng-icon name="lucideCircleAlert" size="13" /> }
+              @else if (busy()) { <span class="state-pulse"></span> }
+              {{ job()?.state ?? 'idle' }}
+            </span>
+          </div>
+          <pre #output class="console-output" [class.has-output]="logs().length > 0" aria-live="polite">
+            @if (logs().length > 0) {
+              @for (line of logs(); track $index) { <span class="console-line">{{ line || ' ' }}</span> }
+            } @else {
+              <span class="console-placeholder"><ng-icon name="lucideTerminal" size="22" /><span>Console standing by</span><span class="placeholder-rule"></span></span>
+            }
+          </pre>
+          <div class="console-footer">
+            <span>{{ job() ? selectedProfile().name + ' · ' + job()!.serialPort : 'No active job' }}</span>
+            <span>{{ logs().length.toString().padStart(3, '0') }} LINES</span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="page-footer">
+      <span>BNB DEVICE TOOLS</span>
+      <span>{{ systemStatus() ? basename(systemStatus()!.firmwareRoot) : 'FIRMWARE SOURCE' }}</span>
+      <span>LOCAL SESSION</span>
+    </footer>
+  </main>
+</div>
