@@ -1,0 +1,15 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="wordmark" routerLink="/" aria-label="BNB Flasher home">
+      <span class="wordmark-mark">BNB</span>
+      <span>Built-Not-Bought<span class="wordmark-light"> / FLASH</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Flasher</a>
+      <a routerLink="/instructions" routerLinkActive="is-active">Instructions</a>
+      <a routerLink="/hardware" routerLinkActive="is-active">Hardware</a>
+    </nav>
+    <span class="nav-status">WEB SERIAL</span>
+  </header>
+  <router-outlet />
+</div>

@@ -37,6 +37,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .wordmark { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 700; }
 .wordmark-mark { width: 30px; height: 30px; display: grid; place-items: center; color: #fff; background: var(--ink); border-radius: 6px; }
 .wordmark-light { color: var(--muted); font-weight: 500; }
+.main-nav { height: 100%; display: flex; align-items: stretch; gap: 22px; margin-left: auto; margin-right: 28px; }
+.main-nav a { position: relative; display: inline-flex; align-items: center; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 600; transition: color .15s; }
+.main-nav a:hover, .main-nav a.is-active { color: var(--ink); }
+.main-nav a.is-active::after { content: ''; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--accent); }
+.nav-status { color: var(--muted); font: 9px/1 var(--mono); }
 .topbar-status, .local-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font: 10px/1 var(--mono); }
 .topbar-divider { height: 16px; width: 1px; margin: 0 5px; background: var(--line); }
 .local-mark { color: var(--ink); }
@@ -136,6 +141,72 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .placeholder-rule { width: 54px; height: 1px; background: #49625c; }
 .console-footer { min-height: 34px; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; border-top: 1px solid rgba(219, 235, 227, .12); color: #91a59e; font: 9px/1 var(--mono); }
 .page-footer { display: flex; justify-content: space-between; gap: 12px; padding: 17px 2px 0; color: #73827f; font: 9px/1.2 var(--mono); }
+.instructions-page { width: min(1000px, calc(100% - 48px)); margin: 0 auto; padding: 46px 0 26px; animation: appear .45s ease-out both; }
+.instructions-content { padding: 24px; }
+.instructions-intro { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.instructions-intro h2 { margin: 4px 0 0; color: var(--ink); font-size: 17px; line-height: 1.25; font-weight: 600; }
+.prep-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.prep-item { min-width: 0; display: flex; gap: 11px; padding: 14px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.prep-item > ng-icon, .profile-reference ng-icon { flex: 0 0 auto; color: var(--green); }
+.prep-item h3, .flash-steps h3 { margin: 0 0 5px; color: var(--ink); font-size: 12px; font-weight: 600; }
+.prep-item p, .flash-steps p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.instructions-divider { height: 1px; margin: 24px 0; background: var(--line); }
+.flash-steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.flash-steps li { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.flash-steps li:first-child { border-top: 0; }
+.step-number { padding-top: 1px; color: var(--accent); font: 11px/1.4 var(--mono); }
+.flash-steps p strong { color: var(--ink); font-weight: 600; }
+.profile-reference { display: grid; gap: 0; }
+.profile-reference > div { min-height: 46px; display: grid; grid-template-columns: 22px 135px minmax(0, 1fr); align-items: center; gap: 10px; border-top: 1px solid var(--line); }
+.profile-reference > div:first-child { border-top: 0; }
+.profile-reference strong { color: var(--ink); font-size: 11px; font-weight: 600; }
+.profile-reference span { color: var(--muted); font: 10px/1.4 var(--mono); }
+.instructions-note { display: flex; align-items: flex-start; gap: 9px; margin: 18px 0 0; padding: 11px 12px; border: 1px solid #f0d6aa; border-radius: 5px; color: #815b1d; background: #fff8e9; font-size: 10px; line-height: 1.5; }
+.instructions-note ng-icon { flex: 0 0 auto; margin-top: 1px; }
+.hardware-page { width: min(1000px, calc(100% - 48px)); margin: 0 auto; padding: 46px 0 26px; animation: appear .45s ease-out both; }
+.hardware-panel { padding: 24px; }
+.wireless-panel { margin-top: 16px; }
+.hardware-section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.hardware-section-heading h2 { margin: 4px 0 0; color: var(--ink); font-size: 17px; line-height: 1.2; font-weight: 600; }
+.hardware-mode { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; padding: 7px 9px; border: 1px solid #c5ded5; border-radius: 4px; color: var(--green); background: #f3faf6; font: 9px/1 var(--mono); white-space: nowrap; }
+.wiring-diagram { display: grid; grid-template-columns: minmax(130px, 180px) minmax(0, 1fr) minmax(130px, 180px); align-items: center; gap: 16px; padding: 22px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-soft); }
+.board-label { min-height: 72px; display: flex; align-items: center; gap: 10px; padding: 11px; border: 1px solid #d5dfdb; border-radius: 5px; color: var(--ink); background: var(--surface); font-size: 10px; font-weight: 600; line-height: 1.5; }
+.board-label small { color: var(--muted); font: 8px/1.4 var(--mono); }
+.board-chip { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 35px; height: 24px; padding: 0 5px; border: 1px solid #c5ded5; border-radius: 3px; color: var(--green); background: #f3faf6; font: 8px/1 var(--mono); }
+.wire-map { display: grid; gap: 15px; }
+.wire-row { display: grid; grid-template-columns: 56px minmax(25px, 1fr) 56px; align-items: center; gap: 8px; }
+.pin-label { color: var(--ink); font: 9px/1 var(--mono); text-align: center; white-space: nowrap; }
+.pin-label small { display: block; margin-top: 4px; color: var(--muted); font: 8px/1 var(--mono); }
+.wire-line { position: relative; height: 2px; background: var(--accent); }
+.wire-line::before, .wire-line::after { position: absolute; top: 50%; width: 7px; height: 7px; border: 2px solid var(--surface-soft); border-radius: 50%; background: var(--accent); content: ''; transform: translateY(-50%); }
+.wire-line::before { left: -1px; }
+.wire-line::after { right: -1px; }
+.rx-wire { background: var(--green); }
+.rx-wire::before, .rx-wire::after { background: var(--green); }
+.ground-wire { height: 1px; background: #98a7a2; }
+.ground-wire::before, .ground-wire::after { width: 5px; height: 5px; background: #657773; }
+.power-wire { background: #c88a36; }
+.power-wire::before, .power-wire::after { background: #c88a36; }
+.wiring-table-wrap { overflow-x: auto; margin-top: 16px; }
+.wiring-table { width: 100%; border-collapse: collapse; text-align: left; }
+.wiring-table th { padding: 9px 12px; color: var(--muted); background: var(--surface-soft); font: 9px/1.2 var(--mono); text-transform: uppercase; }
+.wiring-table td { padding: 11px 12px; border-top: 1px solid var(--line); color: var(--ink); font: 10px/1.2 var(--mono); }
+.wiring-table td strong { font-weight: 600; }
+.wiring-table td:nth-child(2) { width: 90px; color: var(--accent); text-align: center; font-size: 16px; }
+.hardware-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 14px; padding: 11px 12px; border: 1px solid #f0d6aa; border-radius: 5px; color: #815b1d; background: #fff8e9; }
+.hardware-note ng-icon { flex: 0 0 auto; margin-top: 1px; }
+.hardware-note p { margin: 0; font-size: 10px; line-height: 1.5; }
+.wireless-layout { display: grid; grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr); align-items: center; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-soft); }
+.wireless-master, .wireless-nodes > div { min-height: 76px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 12px; border: 1px solid #d5dfdb; border-radius: 5px; background: var(--surface); }
+.wireless-master strong, .wireless-nodes strong { color: var(--ink); font-size: 11px; }
+.wireless-master small, .wireless-nodes small { color: var(--muted); font: 9px/1.2 var(--mono); }
+.wireless-link { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.wireless-link span { width: 7px; height: 7px; border: 1px solid #86b4a2; border-radius: 50%; background: #dcefe6; }
+.wireless-link span:nth-child(2) { width: 100%; height: 2px; border: 0; border-radius: 0; background: #86b4a2; }
+.wireless-nodes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.wireless-caption { display: flex; align-items: flex-start; gap: 8px; margin: 13px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.wireless-caption ng-icon { flex: 0 0 auto; color: var(--green); }
+.hardware-footer { display: flex; justify-content: space-between; gap: 12px; padding: 17px 2px 0; color: #73827f; font: 9px/1.3 var(--mono); }
 .spin { animation: spin .9s linear infinite; }
 @keyframes appear { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes line-appear { from { opacity: .25; transform: translateX(3px); } to { opacity: 1; transform: translateX(0); } }
@@ -155,12 +226,34 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 	.topbar { height: 56px; padding: 0 17px; }
 	.topbar-status { gap: 6px; font-size: 8px; }
 	.topbar-divider { margin: 0 2px; }
+	.main-nav { gap: 13px; margin-right: 14px; }
+	.main-nav a { font-size: 10px; }
+	.nav-status { display: none; }
 	.main-content { width: calc(100% - 28px); padding-top: 29px; }
+	.instructions-page { width: calc(100% - 28px); padding-top: 29px; }
+	.hardware-page { width: calc(100% - 28px); padding-top: 29px; }
 	.page-heading { align-items: center; margin-bottom: 21px; }
 	.page-heading h1 { font-size: 35px; }
 	.heading-meta { flex-direction: column; gap: 4px; }
 	.heading-mark { padding: 5px 6px; font-size: 8px; text-align: center; }
 	.config-panel { padding: 18px 15px; }
+	.instructions-content { padding: 18px 15px; }
+	.prep-grid { grid-template-columns: 1fr; }
+	.profile-reference > div { grid-template-columns: 22px minmax(95px, .42fr) minmax(0, 1fr); gap: 7px; padding: 9px 0; }
+	.profile-reference span { font-size: 9px; }
+	.hardware-panel { padding: 18px 15px; }
+	.hardware-section-heading { align-items: flex-start; flex-wrap: wrap; }
+	.hardware-mode { margin-left: 40px; }
+	.wiring-diagram { grid-template-columns: 1fr; gap: 14px; padding: 14px; }
+	.board-label { min-height: 54px; }
+	.wire-map { gap: 13px; padding: 4px 0; }
+	.wire-row { grid-template-columns: 62px minmax(25px, 1fr) 62px; }
+	.wireless-layout { grid-template-columns: 1fr; gap: 0; padding: 12px; }
+	.wireless-link { width: 2px; height: 24px; flex-direction: column; gap: 0; margin: 0 auto; transform: none; }
+	.wireless-link span { display: none; }
+	.wireless-link span:nth-child(2) { display: block; width: 2px; height: 100%; }
+	.wireless-nodes > div { min-height: 68px; padding: 9px; }
+	.hardware-footer { flex-wrap: wrap; font-size: 8px; }
 	.panel-heading { margin-bottom: 17px; }
 	.profile-grid { gap: 6px; }
 	.profile-option { min-height: 105px; padding: 10px 8px; }

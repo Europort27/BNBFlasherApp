@@ -1,0 +1,69 @@
+<main class="instructions-page">
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow"><span>02</span> FIELD GUIDE</p>
+      <h1>Flash <span>instructions</span></h1>
+    </div>
+    <div class="heading-meta">
+      <span class="heading-mark">WEB SERIAL</span>
+      <span class="heading-mark">ESP32 FAMILY</span>
+    </div>
+  </section>
+
+  <section class="instructions-content panel">
+    <div class="instructions-intro">
+      <div class="panel-index">A</div>
+      <div>
+        <p class="section-kicker">BEFORE YOU BEGIN</p>
+        <h2>Connect and authorize your board</h2>
+      </div>
+    </div>
+
+    <div class="prep-grid">
+      <div class="prep-item">
+        <ng-icon name="lucideUsb" size="19" />
+        <div><h3>Use a data USB cable</h3><p>Connect the ESP32 board directly to this computer. Charge-only cables will not expose a serial port.</p></div>
+      </div>
+      <div class="prep-item">
+        <ng-icon name="lucideCpu" size="19" />
+        <div><h3>Use Chrome or Edge</h3><p>Web Serial requires a supported browser and a secure page. HTTPS and localhost are supported.</p></div>
+      </div>
+      <div class="prep-item">
+        <ng-icon name="lucideCircleAlert" size="19" />
+        <div><h3>Close serial monitors</h3><p>Only one application can own a serial port at a time. Close other terminals using the board before flashing.</p></div>
+      </div>
+    </div>
+
+    <div class="instructions-divider"></div>
+    <div class="instructions-intro">
+      <div class="panel-index">B</div>
+      <div>
+        <p class="section-kicker">FLASH A DEVICE</p>
+        <h2>Choose the matching firmware</h2>
+      </div>
+    </div>
+
+    <ol class="flash-steps">
+      <li><span class="step-number">01</span><div><h3>Select a profile</h3><p><strong>Master</strong> is for the ESP32-WROOM-32E. <strong>Wired scanner</strong> is the C5 connected to the master by UART. <strong>Wireless scanner</strong> is a C5 joining over ESP-NOW.</p></div></li>
+      <li><span class="step-number">02</span><div><h3>Grant serial access</h3><p>On the Flasher page, choose <strong>Choose USB device</strong> and select the board in the browser prompt. The permitted device appears in the serial selector.</p></div></li>
+      <li><span class="step-number">03</span><div><h3>Start flashing</h3><p>Choose the detected device profile and press <strong>Flash firmware</strong>. The browser identifies the chip before writing. If the chip does not match the profile, flashing stops.</p></div></li>
+      <li><span class="step-number">04</span><div><h3>Wait for completion</h3><p>Keep the USB cable connected while the job console reports progress. The board resets when writing and verification finish.</p></div></li>
+    </ol>
+
+    <div class="instructions-divider"></div>
+    <div class="instructions-intro">
+      <div class="panel-index">C</div>
+      <div>
+        <p class="section-kicker">BUNDLED PROFILES</p>
+        <h2>Firmware defaults</h2>
+      </div>
+    </div>
+    <div class="profile-reference">
+      <div><ng-icon name="lucideCpu" size="17" /><strong>Master</strong><span>ESP32 · BLE BNB-WarDriver · UART1 GPIO17/16 · ESP-NOW channel 1</span></div>
+      <div><ng-icon name="lucideCable" size="17" /><strong>Wired scanner</strong><span>ESP32-C5 · UART1 GPIO8/9 · 921600 baud</span></div>
+      <div><ng-icon name="lucideRadio" size="17" /><strong>Wireless scanner</strong><span>ESP32-C5 · ESP-NOW channel 1</span></div>
+    </div>
+
+    <p class="instructions-note"><ng-icon name="lucideCircleAlert" size="16" /> The Source Built Firmware workflow is currently disabled. Precompiled bundles are served from this site and flashed directly from the browser; no local flasher service is used.</p>
+  </section>
+</main>

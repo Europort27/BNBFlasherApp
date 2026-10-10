@@ -1,0 +1,67 @@
+<main class="hardware-page">
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow"><span>03</span> BENCH WIRING</p>
+      <h1>Hardware <span>connections</span></h1>
+    </div>
+    <div class="heading-meta">
+      <span class="heading-mark">3.3V LOGIC</span>
+      <span class="heading-mark">UART1</span>
+    </div>
+  </section>
+
+  <section class="hardware-panel panel">
+    <div class="hardware-section-heading">
+      <div class="panel-index">A</div>
+      <div>
+        <p class="section-kicker">WIRED SCANNER</p>
+        <h2>Master to ESP32-C5</h2>
+      </div>
+      <span class="hardware-mode"><ng-icon name="lucideCable" size="15" /> UART · 921600 baud</span>
+    </div>
+
+    <div class="wiring-diagram" aria-label="Cross-connect UART transmit and receive, common ground, and 5V power">
+      <div class="board-label master-label"><span class="board-chip">01</span><span>ESP32-WROOM-32E<br><small>MASTER</small></span></div>
+      <div class="wire-map">
+        <div class="wire-row"><span class="pin-label">GPIO17 <small>TX</small></span><span class="wire-line tx-wire"><i></i></span><span class="pin-label">GPIO9 <small>RX</small></span></div>
+        <div class="wire-row"><span class="pin-label">GPIO16 <small>RX</small></span><span class="wire-line rx-wire"><i></i></span><span class="pin-label">GPIO8 <small>TX</small></span></div>
+        <div class="wire-row ground-row"><span class="pin-label">GND</span><span class="wire-line ground-wire"><i></i></span><span class="pin-label">GND</span></div>
+        <div class="wire-row power-row"><span class="pin-label">5V+ <small>VIN</small></span><span class="wire-line power-wire"><i></i></span><span class="pin-label">5V+ <small>VIN</small></span></div>
+      </div>
+      <div class="board-label scanner-label"><span class="board-chip">02</span><span>ESP32-C5<br><small>WIRED SCANNER</small></span></div>
+    </div>
+
+    <div class="wiring-table-wrap">
+      <table class="wiring-table">
+        <thead><tr><th>Master</th><th>Connect to</th><th>ESP32-C5 scanner</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GPIO17 · TX</strong></td><td><span class="cross-arrow">→</span></td><td><strong>GPIO9 · RX</strong></td></tr>
+          <tr><td><strong>GPIO16 · RX</strong></td><td><span class="cross-arrow">←</span></td><td><strong>GPIO8 · TX</strong></td></tr>
+          <tr><td><strong>GND</strong></td><td><span class="cross-arrow">↔</span></td><td><strong>GND</strong></td></tr>
+          <tr><td><strong>5V+/VIN</strong></td><td><span class="cross-arrow">↔</span></td><td><strong>5V+/VIN</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="hardware-note"><ng-icon name="lucideCircleAlert" size="16" /><p>This wiring joins the 5V/VIN rails. Do not power both boards from separate USB sources while the 5V link is connected; disconnect that lead before plugging both boards into USB.</p></div>
+  </section>
+
+  <section class="hardware-panel panel wireless-panel">
+    <div class="hardware-section-heading">
+      <div class="panel-index">B</div>
+      <div>
+        <p class="section-kicker">WIRELESS SCANNERS</p>
+        <h2>ESP-NOW nodes</h2>
+      </div>
+      <span class="hardware-mode"><ng-icon name="lucideRadio" size="15" /> 2.4 GHz radio</span>
+    </div>
+    <div class="wireless-layout">
+      <div class="wireless-master"><span class="board-chip">MASTER</span><strong>ESP32-WROOM-32E</strong><small>ESP-NOW channel 1</small></div>
+      <div class="wireless-link" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="wireless-nodes"><div><span class="board-chip">NODE 01</span><strong>ESP32-C5</strong><small>ESP-NOW channel 1</small></div><div><span class="board-chip">NODE 02</span><strong>ESP32-C5</strong><small>ESP-NOW channel 1</small></div></div>
+    </div>
+    <p class="wireless-caption"><ng-icon name="lucideUsb" size="15" /> No UART signal wires are needed. Connect each node to USB power for programming and operation; keep the nodes on the same ESP-NOW channel as the master.</p>
+  </section>
+
+  <footer class="hardware-footer"><span>WIRED DEFAULTS: MASTER GPIO17/16 · SCANNER GPIO8/9</span><span>UART1 · 921600 BAUD</span></footer>
+</main>

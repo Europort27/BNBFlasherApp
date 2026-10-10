@@ -16,6 +16,7 @@ import {
   lucideZap,
 } from '@ng-icons/lucide'
 import { Component, computed, ElementRef, OnInit, signal, ViewChild } from '@angular/core'
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
 
 type PrecompiledProfile = 'master' | 'wired' | 'wireless'
 type FirmwareMode = 'precompiled' | 'source'
@@ -75,6 +76,13 @@ const activeStates: JobState[] = ['preparing', 'connecting', 'flashing']
 
 @Component({
   selector: 'app-root',
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  templateUrl: './app-shell.html',
+})
+export class App {}
+
+@Component({
+  selector: 'app-flasher-page',
   imports: [NgIcon],
   providers: [provideIcons({
     lucideActivity,
@@ -91,7 +99,7 @@ const activeStates: JobState[] = ['preparing', 'connecting', 'flashing']
   })],
   templateUrl: './bench.html',
 })
-export class App implements OnInit {
+export class FlasherPage implements OnInit {
   readonly firmwareMode = signal<FirmwareMode>('precompiled')
   readonly precompiledProfiles = precompiledProfileOptions
   readonly precompiledProfile = signal<PrecompiledProfile>('master')
@@ -213,7 +221,6 @@ export class App implements OnInit {
         return { address: file.address, data: new Uint8Array(await response.arrayBuffer()) }
       }))
 
-      this.setJobState('connecting')
       this.appendLog('Connecting to the selected USB serial device...')
       const terminal: IEspLoaderTerminal = {
         clean: () => undefined,
