@@ -20,7 +20,7 @@ Run `npm run build`, then deploy `client/dist/bnb-flasher-ui/browser` to any sta
 
 ### GitHub Pages
 
-This repository includes a GitHub Actions deployment workflow. In the repository, open **Settings → Pages** and set the source to **GitHub Actions**. Push to `master` (or run the workflow manually); the site will deploy to <https://byachna.github.io/BNBFlasherApp/>. The build sets Angular's base href to the project-site path so firmware downloads resolve correctly.
+This repository includes a GitHub Actions deployment workflow. In the repository, open **Settings → Pages** and set the source to **GitHub Actions**. Push to `master` (or run the workflow manually); the site will deploy to <https://europort27.github.io/BNBFlasherApp/>. The build sets Angular's base href to the project-site path so firmware downloads resolve correctly.
 
 Web Serial only lists ports the user has granted to this site. The user must initiate port selection from a click; the browser does not allow silent access to arbitrary USB devices. Safari is not supported by Web Serial. The **Source Built Firmware** tab is intentionally disabled; this app flashes the precompiled bundles only.
 
