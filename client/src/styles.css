@@ -118,12 +118,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .system-warning, .inline-alert { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px; border: 1px solid #f0d6aa; border-radius: 5px; color: #815b1d; background: #fff8e9; font-size: 10px; line-height: 1.4; }
 .inline-alert { margin-top: 17px; border-color: #efc1b8; color: var(--accent-dark); background: #fff5f2; }
 .system-warning ng-icon, .inline-alert ng-icon { flex: 0 0 auto; }
-.firmware-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: -6px 0 21px; padding: 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-soft); }
-.firmware-tab { min-width: 0; min-height: 36px; padding: 5px 8px; border: 1px solid transparent; border-radius: 4px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 600; cursor: pointer; }
-.firmware-tab:hover:not(:disabled) { color: var(--ink); }
-.firmware-tab.is-active { border-color: #dce4e1; color: var(--ink); background: var(--surface); box-shadow: 0 1px 3px rgba(23, 42, 43, .07); }
-.firmware-tab:disabled { opacity: .58; cursor: not-allowed; }
-.firmware-panel[hidden] { display: none; }
 .source-built-form { padding-top: 2px; }
 .source-heading { margin-bottom: 18px; }
 .console-panel { min-height: 314px; overflow: hidden; display: flex; flex-direction: column; color: #e7eeeb; background: #1b2b2d; border-color: #1b2b2d; box-shadow: 0 12px 26px rgba(24, 46, 46, .1); }
@@ -262,7 +256,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 	.field-grid { gap: 13px 10px; }
 	.field { font-size: 10px; }
 	.form-footer { align-items: stretch; flex-direction: column; }
-	.firmware-tab { min-height: 42px; padding: 6px; font-size: 10px; line-height: 1.25; }
 	.flash-button { width: 100%; }
 	.device-column { grid-template-columns: 1fr; }
 	.console-panel { min-height: 290px; }

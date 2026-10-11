@@ -19,7 +19,6 @@ import { Component, computed, ElementRef, OnInit, signal, ViewChild } from '@ang
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
 
 type PrecompiledProfile = 'master' | 'wired' | 'wireless'
-type FirmwareMode = 'precompiled' | 'source'
 type JobState = 'preparing' | 'connecting' | 'flashing' | 'success' | 'failed'
 
 interface SerialDevice {
@@ -100,7 +99,6 @@ export class App {}
   templateUrl: './bench.html',
 })
 export class FlasherPage implements OnInit {
-  readonly firmwareMode = signal<FirmwareMode>('precompiled')
   readonly precompiledProfiles = precompiledProfileOptions
   readonly precompiledProfile = signal<PrecompiledProfile>('master')
   readonly loadingPorts = signal(false)
@@ -177,10 +175,6 @@ export class FlasherPage implements OnInit {
     const product = info.usbProductId?.toString(16).padStart(4, '0')
     if (vendor && product) return `USB ${vendor}:${product}`
     return 'Serial device'
-  }
-
-  setFirmwareMode(mode: FirmwareMode) {
-    this.firmwareMode.set(mode)
   }
 
   setPrecompiledProfile(profile: PrecompiledProfile) {

@@ -20,22 +20,6 @@
           </div>
         </div>
 
-        <div class="firmware-tabs" role="tablist" aria-label="Firmware workflow">
-          <button
-            id="precompiled-tab"
-            class="firmware-tab"
-            type="button"
-            role="tab"
-            aria-controls="precompiled-panel"
-            [attr.aria-selected]="firmwareMode() === 'precompiled'"
-            [class.is-active]="firmwareMode() === 'precompiled'"
-            [disabled]="busy()"
-            (click)="setFirmwareMode('precompiled')">
-            Precompiled Firmware
-          </button>
-        </div>
-
-        <div id="precompiled-panel" class="firmware-panel" role="tabpanel" aria-labelledby="precompiled-tab" [hidden]="firmwareMode() !== 'precompiled'">
         <div class="profile-grid" role="radiogroup" aria-label="Firmware profile">
           @for (item of precompiledProfiles; track item.id) {
             <button
@@ -81,12 +65,6 @@
             @else { <ng-icon name="lucideZap" size="17" /> }
             <span>{{ busy() ? 'Working…' : 'Flash firmware' }}</span>
           </button>
-        </div>
-
-        </div>
-
-        <div id="source-panel" class="firmware-panel" role="tabpanel" aria-labelledby="source-tab" hidden>
-          <p class="bundle-description">Source builds are currently disabled. Use the bundled firmware images.</p>
         </div>
       </section>
 
