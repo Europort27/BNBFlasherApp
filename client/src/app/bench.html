@@ -33,19 +33,6 @@
             (click)="setFirmwareMode('precompiled')">
             Precompiled Firmware
           </button>
-          <button
-            id="source-tab"
-            class="firmware-tab"
-            type="button"
-            role="tab"
-            aria-controls="source-panel"
-            [attr.aria-selected]="firmwareMode() === 'source'"
-            [class.is-active]="firmwareMode() === 'source'"
-            [disabled]="true"
-            aria-disabled="true"
-            title="Source builds are currently disabled">
-            Source Built Firmware
-          </button>
         </div>
 
         <div id="precompiled-panel" class="firmware-panel" role="tabpanel" aria-labelledby="precompiled-tab" [hidden]="firmwareMode() !== 'precompiled'">
